@@ -25,14 +25,6 @@ matrix matrix::transpose() const{
     return result;
 }
 
-matrix matrix::apply(double (*func)(double)) const {
-    matrix result(*this);
-    for (auto& x : result.data){
-        x = func(x);
-    }
-    return result;
-}
-
 double matrix::fNorm() const {
     return cblas_dnrm2(rows * cols, data.data(), 1);
 }
@@ -156,6 +148,16 @@ void matrix::deserializeMatrix(std::istream &in) {
             in >> (*this)(i, j);
         }
     }
+}
+
+matrix matrix::hadamard(const matrix &rhs) const {
+    if (cols != rhs.cols || rows != rhs.rows) {
+        std::cout << "Attempted: (" << rows << "," << cols << ") hadamard (" << rhs.rows << "," << rhs.cols << ")" << std::endl;
+        throw std::runtime_error("Dimension Problems.");
+    }
+    matrix out(rows, cols);
+    for (int i = 0, N = rows*cols; i < N; ++i) out.data[i] = data[i] * rhs.data[i];
+    return out;
 }
 
 matrix matrix::operator*(const matrix& rhs) const {

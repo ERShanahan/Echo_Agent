@@ -63,6 +63,13 @@ public:
     // Stops the predictor thread.
     void stopPredictor();
 
+    // Adam hyper-params
+    double beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8;
+    int    adam_t = 0;
+
+    // For each learned weight matrix we need an m, v of the same shape:
+    std::vector<matrix> adam_m, adam_v;
+
     // Example training loop skeleton (to be integrated into your Model class):
     // For each sample:
     //   1. Run forwardPass (which must cache intermediate values).
@@ -71,6 +78,11 @@ public:
     //   4. Run backward passes (e.g., encoderBlockBackward, multi-head attention, etc.).
     //   5. Update every parameter via sgdUpdate.
     void trainModel(const std::vector<Sample> &dataset, double learningRate, int epochs);
+
+    void trainModelMiniBatch(const std::vector<Sample>& dataset,
+        double learningRate,
+        int epochs,
+        int batchSize);
 
     // ===== Loss Functions =====
 
@@ -100,6 +112,13 @@ public:
 
     // SGD update: param = param - learningRate * grad (using cblas_daxpy)
     void sgdUpdate(matrix &param, const matrix &grad, double learningRate);
+
+    void adamUpdate(
+        matrix &w, const matrix &grad,
+        matrix &m, matrix &v,
+        double lr);
+
+    void clipGradients(std::vector<matrix>& grads, double clip_thresh);
 
     // ===== Layer Normalization =====
 

@@ -147,7 +147,62 @@ int main(int argc, char* argv[]) {
             std::cout << "Starting Training on Loaded Data... " << std::endl;
 
             // Train the Model.
-            gModel->trainModel(trainTestPair.first, 0.001, epochs);
+            gModel->trainModelMiniBatch(trainTestPair.first, 0.01, epochs, 100);
+
+            int correct = 0;
+            double totalLoss = 0.0;
+            int N = trainTestPair.second.size();
+            int V = phonemeDict.size();
+
+            // initialize confusion matrix
+            std::vector<std::vector<int>> confMat(V, std::vector<int>(V, 0));
+
+            for (auto &sample : trainTestPair.second) {
+                matrix mask = createMask(sample.features.rows);
+                matrix logits = gModel->forwardPass(
+                    sample.features,
+                    sample.features.shift(1),
+                    mask
+                );
+                // loss
+                double loss = gModel->crossEntropyLoss(logits, sample.label);
+                totalLoss += loss;
+
+                // prediction
+                int pred = 0;
+                double best = logits(0,0);
+                for (int j = 1; j < logits.cols; ++j) {
+                    if (logits(0,j) > best) {
+                        best = logits(0,j);
+                        pred = j;
+                    }
+                }
+                if (pred == sample.label) ++correct;
+                confMat[sample.label][pred]++;
+            }
+
+            double avgLoss  = totalLoss / N;
+            double accuracy = 100.0 * correct / N;
+
+            // print summary
+            std::cout << "\n=== Test set evaluation ===\n"
+                    << "  Examples:       " << N      << "\n"
+                    << "  Avg. loss:      " << avgLoss << "\n"
+                    << "  Accuracy:       " << accuracy << "%\n\n";
+
+            // (optional) print a small confusion‐matrix snippet:
+            std::cout << "Confusion matrix (true × pred):\n";
+            std::cout << "    ";
+            for (int j = 0; j < V; ++j) std::cout << std::setw(4) << j;
+            std::cout << "\n";
+            for (int i = 0; i < V; ++i) {
+                std::cout << std::setw(3) << i << ":";
+                for (int j = 0; j < V; ++j) {
+                    std::cout << std::setw(4) << confMat[i][j];
+                }
+                std::cout << "\n";
+            }
+
 
         }else if (cmd == test_cmd){
 

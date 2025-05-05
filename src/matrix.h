@@ -8,6 +8,8 @@ public:
     int rows, cols;
     std::vector<double> data;
 
+    matrix() : rows(0), cols(0) {}
+
     matrix(int r, int c);
 
     double& operator()(int i, int j);
@@ -17,7 +19,14 @@ public:
 
     matrix transpose() const;
 
-    matrix apply(double (*func)(double)) const;
+    template<typename Func>
+    matrix apply(Func func) const {
+        matrix result(*this);
+        for (auto& x : result.data){
+            x = func(x);
+        }
+        return result;
+    }
 
     double fNorm() const;
 
@@ -38,6 +47,8 @@ public:
     void serializeMatrix(std::ostream &out) const;
 
     void deserializeMatrix(std::istream &in);
+
+    matrix hadamard(const matrix &other) const;
 
     // Overload operator* for matrix-matrix multiplication
     matrix operator*(const matrix& rhs) const;
